@@ -2,17 +2,17 @@ import requests
 import sqlite3
 import os
 from bs4 import BeautifulSoup
-state = {'math', "strings", "trees", "graphs", "dp", "greedy", "geometry", "combinatorics"}
+available_tags = {'math', "strings", "trees", "graphs", "dp", "greedy", "geometry", "combinatorics"}
 
 def create_cf_base():
     url = 'http://codeforces.com/problemset/'
     r = requests.get(url)
     max_page = 0
     soup = BeautifulSoup(r.text, "lxml")
-    base = sqlite3.connect("cf.db")
+    base = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\cf.db")
     conn = base.cursor()
     conn.execute("create table problems (problem INTEGER, diff CHAR)")
-    for i in state:
+    for i in available_tags:
         conn.execute("create table " + i + " (problems INTEGER, diff CHAR)")
 
     for link in soup.find_all(attrs={"class" : "page-index"}):
@@ -39,14 +39,14 @@ def create_cf_base():
                         f = True
                         last_update = old
                     conn.execute("insert into problems values (?, ?)", (a, b))
-                if len(s) == 4 and s[3] in state:
+                if len(s) == 4 and s[3] in available_tags:
                     conn.execute("insert into " + s[3] + " values (?, ?)", (a, b))
 
     base.commit()
     base.close()
-    settings = sqlite3.connect("settings.db")
+    settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\settings.db")
     conn = settings.cursor()
-    conn.execute("create table users (chat_id INTEGER, username STRING, last_update STRING)")
+    conn.execute("create table users (chat_id INTEGER, username STRING, last_update STRING, state INTEGER)")
     conn.execute("create table last_update_problemset (problem STRING)")
     conn.execute("insert into last_update_problemset values (?)", (last_update, ))
     settings.commit()
@@ -54,9 +54,9 @@ def create_cf_base():
 
 
 def create_theory_table(): #create EMPTY theory table
-    theory = sqlite3.connect("theory.db")
+    theory = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\theory.db")
     conn = theory.cursor()
-    for i in state:
+    for i in available_tags:
         conn.execute("create table " + str(i) + " (link STRING)")
     theory.commit()
     theory.close()
@@ -65,4 +65,7 @@ def create_theory_table(): #create EMPTY theory table
 path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'cf.db')
 if not os.path.exists(path):
     create_cf_base()
+
+path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'theory.db')
+if not os.path.exists(path):
     create_theory_table()
