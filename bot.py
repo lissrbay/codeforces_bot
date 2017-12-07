@@ -52,17 +52,17 @@ def sayhellotoeveryone(message):
 
 
 #Not available for users
-#@bot.message_handler(commands=['add'])
-#def add_theory(message):
-#    bot.send_message(message.chat.id, "Gimme tag and link")
-#    set_state(message.chat.id, config.States.S_THEORY_ADDING.value)
+@bot.message_handler(commands=['add'])
+def add_theory(message):
+    bot.send_message(message.chat.id, "Gimme tag and link")
+    set_state(message.chat.id, config.States.S_THEORY_ADDING.value)
 
 
-#@bot.message_handler(func = lambda message: get_current_state(message.chat.id) == config.States.S_THEORY_ADDING.value)
-#def add_theory2(message):
-#    s = message.text.split()
-#    update.update_theory_base(s[0], s[1])
-#    set_state(message.chat.id, config.States.S_START.value)
+@bot.message_handler(func = lambda message: get_current_state(message.chat.id) == config.States.S_THEORY_ADDING.value)
+def add_theory2(message):
+    s = message.text.split()
+    bases.update.update_theory_base(s[0], s[1])
+    set_state(message.chat.id, config.States.S_START.value)
 
 
 @bot.message_handler(commands=['theory'])
