@@ -28,7 +28,6 @@ def init_user(username, chat_id):
     cursor.execute("CREATE TABLE result (problem INTEGER, diff STRING, verdict STRING)")
     cursor2.execute("SELECT * FROM problems")
     x = cursor2.fetchone()
-
     while x != None:
         cursor.execute("insert into result values (?, ?, ? )", (x[0], x[1], "NULL"))
         x = cursor2.fetchone()
@@ -60,13 +59,14 @@ def init_user(username, chat_id):
             s = link.get('href')
             if s != None and s.find('/problemset') != -1:
                 s = s.split('/')
-                if len(s)== 5 and s[3] + s[4] != old:
-                    old = s[3] + s[4]
+                if len(s) == 5:
                     s2 = str(ver[count]).split()
                     s2 = s2[5].split('\"')
                     count += 1
                     cursor.execute("select * from result where problem = '" + s[3] + "'and diff = '" + s[4] + "'")
                     x = cursor.fetchone()
+                    if s2[1] == 'OK' and x != None:
+                        cursor.execute("update result set verdict = '" + s2[1] + "' where problem = '" + s[3] + "' and diff = '" + s[4] + "'")
                     if x != None and x[2] != 'OK':
                         cursor.execute("update result set verdict = '" + s2[1] +"' where problem = '" + s[3] + "' and diff = '" + s[4] + "'")
 
@@ -76,13 +76,16 @@ def init_user(username, chat_id):
 
     settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\settings.db")
     conn = settings.cursor()
+    conn.execute("select * from last_update_problemset")
+    last_problem = conn.fetchone()
     conn.execute("select * from users where chat_id = '" + str(chat_id) + "'")
     x = conn.fetchone()
     if x == None:
-        conn.execute("insert into users values (?, ?, ?, ?)", (chat_id, username, str(last_try)), 1)
+        conn.execute("insert into users values (?, ?, ?, ?, ?)", (chat_id, username, str(last_try), str(last_problem[0]), 1))
     else:
         conn.execute("update users set username = '" + str(username) + "' where chat_id = '" + str(chat_id) + "'")
         conn.execute("update users set last_update = '" + str(last_try) + "' where chat_id = '" + str(chat_id) + "'")
+        conn.execute("update users set last_problem = '" + str(last_problem[0]) + "' where chat_id = '" + str(chat_id) + "'")
         conn.execute("update users set state = '" + str(1) + "' where chat_id = '" + str(chat_id) + "'")
     settings.commit()
     settings.close()

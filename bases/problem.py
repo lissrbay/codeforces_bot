@@ -10,12 +10,13 @@ import os
 import random
 import matplotlib.pyplot as plt
 
-available_tags = {'math', "strings", "trees", "graphs", "dp", "greedy", "geometry", "combinatorics"}
-
+available_tags = ['math', "strings", "trees", "graphs", "dp", "greedy", "geometry", "combinatorics"]
+available_diff = ['A', 'B', 'C', 'D', 'E', 'F']
 
 def get_unsolved_problem(tag, username):
     tasks = list()
-
+    list_of_current_tags = list()
+    list_of_current_diff = list()
 
     def find_intersection(tag):
         conn = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\users\\" + username + '.db')
@@ -42,8 +43,21 @@ def get_unsolved_problem(tag, username):
     for i in available_tags:
         if i in tag:
             list_of_current_tags.append(i)
-    if len(list_of_current_tags) == 0:
-        return "Invalid tags"
+
+    list_of_current_diff = list()
+    for i in available_diff:
+        if i in tag:
+            list_of_current_diff.append(i)
+    f = False
+    if len(list_of_current_tags) == 0 and list_of_current_diff !=0:
+        list_of_current_tags = available_tags.copy()
+        f = True
+    if len(list_of_current_tags) == 0 and len(list_of_current_diff) == 0:
+        return "Plz try again"
+    if len(list_of_current_diff) == 0 and len(list_of_current_tags) != 0:
+        list_of_current_diff = available_diff.copy()
+        f = True
+
 
     conn = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\users\\" + username + '.db')
     conn2 = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + '\\cf.db')
@@ -53,27 +67,28 @@ def get_unsolved_problem(tag, username):
     problem_and_diff = cursor2.fetchone()
 
     while problem_and_diff != None:
-        cursor.execute("SELECT * FROM result WHERE problem = '" + str(problem_and_diff[0]) + "' AND diff = '" + str(
-            problem_and_diff[1]) + "' AND NOT verdict = 'OK'")
-        problem_and_diff_and_ok = cursor.fetchone()
-        if problem_and_diff_and_ok != None:
-            tasks.append(problem_and_diff_and_ok)
+        if problem_and_diff[1] in list_of_current_diff:
+            cursor.execute("SELECT * FROM result WHERE problem = '" + str(problem_and_diff[0]) + "' AND diff = '" + str(
+                problem_and_diff[1]) + "' AND NOT verdict = 'OK'")
+            problem_and_diff_and_ok = cursor.fetchone()
+            if problem_and_diff_and_ok != None:
+                tasks.append(problem_and_diff_and_ok)
         problem_and_diff = cursor2.fetchone()
 
     conn.close()
     conn2.close()
-
-    for i in range(1, len(list_of_current_tags)):
-        tasks = find_intersection(list_of_current_tags[i])
+    if not f:
+        for i in range(1, len(list_of_current_tags)):
+            tasks = find_intersection(list_of_current_tags[i])
 
     random.seed()
     if len(tasks) > 0:
-        index_of_rtask = random.randint(0, len(tasks) - 1)
-        ans = str(tasks[index_of_rtask][0]) + '/' + tasks[index_of_rtask][1]
-        tasks.pop(index_of_rtask)
-        return 'http://codeforces.com/problemset/problem/' + ans
+        ind1 = random.randint(0, len(tasks) - 1)
+        s1 = str(tasks[ind1][0]) + '/' + tasks[ind1][1]
+        tasks.pop(ind1)
+        return 'http://codeforces.com/problemset/problem/' + s1
     else:
-        return "You have solved all tasks with this tags, nice!"
+        return "You have solved all tasks with this tag, nice!"
 
 def get_theory_from_tag(tag):
     if not tag in available_tags:

@@ -18,7 +18,7 @@ def get_current_state(chat_id):
     conn.execute("select * from users where chat_id = '" + str(chat_id) + "'")
     name = conn.fetchone()
     if name != None:
-        return name[3]
+        return name[4]
     else:
         return False
     settings.close()
@@ -36,7 +36,6 @@ def show_help(message):
     s += "/login - to authorization.\n"
     s += "/task - to get random unsolved task.\n"
     s += "/theory - to get theory for chosen tag.\n"
-    s += "/update - to update your submissions.\n"
     s += "/stats - to see your statistic."
     bot.send_message(message.chat.id, "Type:\n" + s)
 
@@ -47,7 +46,7 @@ def sayhellotoeveryone(message):
     conn = settings.cursor()
     bot.send_message(message.chat.id, "Hello!")
     bot.send_message(message.chat.id, "Type /help to see list of commands.")
-    conn.execute("insert into users values (?, ?, ?, ?)", (str(message.chat.id), "None", "NULL", config.States.S_START.value))
+    conn.execute("insert into users values (?, ?, ?, ?, ?)", (str(message.chat.id), "None", "NULL", "0", config.States.S_START.value))
     settings.commit()
     settings.close()
 
@@ -105,6 +104,7 @@ def get_login2(message):
     conn.execute("select * from users where chat_id = '" + str(message.chat.id) + "'")
     name = conn.fetchone()
     settings.close()
+    bases.update.cf_update()
     bases.createuserbase.clean_base(name[1])
     bases.createuserbase.clean_base(message.text)
     bot.send_message(message.chat.id, "Creating base...")
@@ -118,7 +118,7 @@ def task(message):
     s = "Which kind of task you need?\n"
     s += "List of tags:\n - math \n - dp \n - greedy \n - strings"
     s += "\n - trees \n - graphs \n - geometry \n - combinatorics"
-    s += "\nYou may combine tags e.x. write '"'dp math'"' to get task with these tags."
+    s += "\nYou may combine tags and difficults e.x. write '"'dp math AB'"' to get task with these tags and difficults."
     bot.send_message(message.chat.id, s)
     set_state(message.chat.id, config.States.S_GET_TASK.value)
 
@@ -133,6 +133,7 @@ def get_task(message):
     if name == None:
         bot.send_message(message.chat.id, "You should login before get tasks.")
     else:
+        bases.update.update_user(name[1], name[0], name[2])
         bot.send_message(message.chat.id, bases.problem.get_unsolved_problem(message.text, name[1]))
     set_state(message.chat.id, config.States.S_START.value)
 
@@ -145,6 +146,7 @@ def stats(message):
     name = conn.fetchone()
     settings.close()
     if name != None:
+        bases.update.update_user(name[1], name[0], name[2])
         bases.problem.create_text_stats(name[1])
         img = open(os.path.abspath(os.path.dirname(__file__)) + "\\bases\\users\\" + name[1] + ".png", "rb")
         bot.send_photo(message.chat.id, img)
@@ -157,22 +159,6 @@ def stats(message):
         img.close()
     else:
         bot.send_message(message.chat.id, "You should login before getting statistic.")
-
-
-@bot.message_handler(commands=['update'])
-def up_to_date(message):
-    bot.send_message(message.chat.id, "Updating base...")
-    bases.update.cf_update()
-    settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\bases\\settings.db")
-    conn = settings.cursor()
-    conn.execute("select * from users where chat_id = '" + str(message.chat.id) + "'")
-    name = conn.fetchone()
-    settings.close()
-    if name == None:
-        bot.send_message(message.chat.id, "You should login before update your submissions.")
-    else:
-        bases.update.update_user(name[1], name[0], name[2])
-    bot.send_message(message.chat.id, "Done!")
 
 
 @bot.message_handler(commands = ['bite'])

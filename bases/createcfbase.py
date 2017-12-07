@@ -46,7 +46,7 @@ def create_cf_base():
     base.close()
     settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\settings.db")
     conn = settings.cursor()
-    conn.execute("create table users (chat_id INTEGER, username STRING, last_update STRING, state INTEGER)")
+    conn.execute("create table users (chat_id INTEGER, username STRING, last_update STRING, last_problem STRING, state INTEGER)")
     conn.execute("create table last_update_problemset (problem STRING)")
     conn.execute("insert into last_update_problemset values (?)", (last_update, ))
     settings.commit()
