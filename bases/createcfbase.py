@@ -13,7 +13,7 @@ def create_cf_base():
     conn = base.cursor()
     conn.execute("create table problems (problem INTEGER, diff CHAR)")
     for i in available_tags:
-        conn.execute("create table " + i + " (problems INTEGER, diff CHAR)")
+        conn.execute("create table ? (problems INTEGER, diff CHAR)", (i,))
 
     for link in soup.find_all(attrs={"class" : "page-index"}):
         s = link.find('a')
@@ -40,7 +40,7 @@ def create_cf_base():
                         last_update = old
                     conn.execute("insert into problems values (?, ?)", (a, b))
                 if len(s) == 4 and s[3] in available_tags:
-                    conn.execute("insert into " + s[3] + " values (?, ?)", (a, b))
+                    conn.execute("insert into ? values (?, ?)", (s[3], a, b))
 
     base.commit()
     base.close()
@@ -57,7 +57,7 @@ def create_theory_table(): #create EMPTY theory table
     theory = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\theory.db")
     conn = theory.cursor()
     for i in available_tags:
-        conn.execute("create table " + str(i) + " (link STRING)")
+        conn.execute("create table " + i + " (link STRING)")
     theory.commit()
     theory.close()
 

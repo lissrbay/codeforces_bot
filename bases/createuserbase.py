@@ -1,8 +1,9 @@
 import requests
 import sqlite3
 import os
-
 from bs4 import BeautifulSoup
+
+
 def check_username(username):
     if username == "":
         return True
@@ -19,6 +20,7 @@ def clean_base(username):
     path = os.path.join(os.path.abspath(os.path.dirname(__file__)) + "\\users\\" + username + '.db')
     if os.path.exists(path):
         os.remove(path)
+
 
 def init_user(username, chat_id):
     conn = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\users\\" + username + '.db')
@@ -41,8 +43,6 @@ def init_user(username, chat_id):
         s = link.find('a')
         s2 = s.get("href").split('/')
         max_page = max(max_page, int(s2[4]))
-
-    old = ""
     r = requests.get('http://codeforces.com/submissions/' + username + '/page/0')
     soup = BeautifulSoup(r.text, "lxml")
     last_try = soup.find(attrs={"class":"status-small"})
@@ -63,29 +63,27 @@ def init_user(username, chat_id):
                     s2 = str(ver[count]).split()
                     s2 = s2[5].split('\"')
                     count += 1
-                    cursor.execute("select * from result where problem = '" + s[3] + "'and diff = '" + s[4] + "'")
+                    cursor.execute("select * from result where problem = ? and diff = ?", (s[3], s[4]))
                     x = cursor.fetchone()
                     if s2[1] == 'OK' and x != None:
-                        cursor.execute("update result set verdict = '" + s2[1] + "' where problem = '" + s[3] + "' and diff = '" + s[4] + "'")
+                        cursor.execute("update result set verdict = ? where problem = ? and diff = ?", (s2[1], s[3], s[4]))
                     if x != None and x[2] != 'OK':
-                        cursor.execute("update result set verdict = '" + s2[1] +"' where problem = '" + s[3] + "' and diff = '" + s[4] + "'")
-
+                        cursor.execute("update result set verdict = ? where problem = ? and diff = ?", (s2[1], s[3], s[4]))
     conn.commit()
     conn.close()
     conn2.close()
-
     settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\settings.db")
     conn = settings.cursor()
     conn.execute("select * from last_update_problemset")
     last_problem = conn.fetchone()
-    conn.execute("select * from users where chat_id = '" + str(chat_id) + "'")
+    conn.execute("select * from users where chat_id = ?", (str(chat_id),))
     x = conn.fetchone()
     if x == None:
         conn.execute("insert into users values (?, ?, ?, ?, ?)", (chat_id, username, str(last_try), str(last_problem[0]), 1))
     else:
-        conn.execute("update users set username = '" + str(username) + "' where chat_id = '" + str(chat_id) + "'")
-        conn.execute("update users set last_update = '" + str(last_try) + "' where chat_id = '" + str(chat_id) + "'")
-        conn.execute("update users set last_problem = '" + str(last_problem[0]) + "' where chat_id = '" + str(chat_id) + "'")
-        conn.execute("update users set state = '" + str(1) + "' where chat_id = '" + str(chat_id) + "'")
+        conn.execute("update users set username = ? where chat_id = ?", (str(username), str(chat_id)))
+        conn.execute("update users set last_update = ? where chat_id = ?", (str(last_try), str(chat_id)))
+        conn.execute("update users set last_problem = ? where chat_id = ?", (str(last_problem[0]), str(chat_id)))
+        conn.execute("update users set state = ? where chat_id = ?", (str(1), str(chat_id)))
     settings.commit()
     settings.close()

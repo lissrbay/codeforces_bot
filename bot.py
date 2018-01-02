@@ -15,7 +15,7 @@ bot = telebot.TeleBot(config.token)
 def get_current_state(chat_id):
     settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__))+"\\bases\\settings.db")
     conn = settings.cursor()
-    conn.execute("select * from users where chat_id = '" + str(chat_id) + "'")
+    conn.execute("select * from users where chat_id = ?", (str(chat_id),))
     name = conn.fetchone()
     if name != None:
         return name[4]
@@ -26,7 +26,7 @@ def get_current_state(chat_id):
 def set_state(chat_id, value):
     settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\bases\\settings.db")
     conn = settings.cursor()
-    conn.execute("update users set state ='" + str(value) + "' where chat_id = '" + str(chat_id) + "'")
+    conn.execute("update users set state = ? where chat_id = ?", (str(value), str(chat_id)))
     settings.commit()
     settings.close()
 
@@ -81,7 +81,7 @@ def get_theory2(message):
 def get_login(message):
     settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\bases\\settings.db")
     conn = settings.cursor()
-    conn.execute("select * from users where chat_id = '" + str(message.chat.id) + "'")
+    conn.execute("select * from users where chat_id = ?", (str(message.chat.id),))
     name = conn.fetchone()
     if name != None:
         bot.send_message(message.chat.id, "Previous handle: " + str(name[1]))
@@ -100,8 +100,7 @@ def get_login2(message):
         bot.send_message(message.chat.id, "Invalid handle.")
         set_state(message.chat.id, config.States.S_START.value)
         return 0
-
-    conn.execute("select * from users where chat_id = '" + str(message.chat.id) + "'")
+    conn.execute("select * from users where chat_id = ?", (str(message.chat.id),))
     name = conn.fetchone()
     settings.close()
     bases.update.cf_update()
@@ -127,7 +126,7 @@ def task(message):
 def get_task(message):
     settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\bases\\settings.db")
     conn = settings.cursor()
-    conn.execute("select * from users where chat_id = '" + str(message.chat.id) + "'")
+    conn.execute("select * from users where chat_id = ?", (str(message.chat.id),))
     name = conn.fetchone()
     settings.close()
     if name == None:
@@ -142,7 +141,7 @@ def get_task(message):
 def stats(message):
     settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\bases\\settings.db")
     conn = settings.cursor()
-    conn.execute("select * from users where chat_id = '" + str(message.chat.id) + "'")
+    conn.execute("select * from users where chat_id = ?", (str(message.chat.id),))
     name = conn.fetchone()
     settings.close()
     if name != None:

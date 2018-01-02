@@ -49,7 +49,7 @@ def cf_update():
                         last_update = old
                     conn.execute("insert into problems values (?, ?)", (a, b))
                 if len(s) == 4 and s[3] in available_tags:
-                    conn.execute("insert into " + s[3] + " values (?, ?)", (a, b))
+                    conn.execute("insert into ? values (?, ?)", (s[3], a, b))
 
         if v:
             break
@@ -59,7 +59,7 @@ def cf_update():
     base.close()
     settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\settings.db")
     conn = settings.cursor()
-    conn.execute("update last_update_problemset set problem = '" + str(last_update) + "' where problem = '" + str(last_try) + "'")
+    conn.execute("update last_update_problemset set problem = ? where problem = ?", (str(last_update), str(last_try)))
     settings.commit()
     settings.close()
 
@@ -70,7 +70,7 @@ def update_user(username, chat_id, last_update):
     cursor = conn.cursor()
     cursor2 = conn2.cursor()
     cursor_settings = settings.cursor()
-    cursor_settings.execute("select last_problem from users where chat_id = '" + str(chat_id) + "'")
+    cursor_settings.execute("select last_problem from users where chat_id = ?", (str(chat_id), ))
     update_eq = cursor_settings.fetchone()
     cursor_settings.execute("select * from last_update_problemset")
     update_base = cursor_settings.fetchone()
@@ -79,7 +79,7 @@ def update_user(username, chat_id, last_update):
         cursor2.execute("SELECT * FROM problems")
         x = cursor2.fetchone()
         while x != None:
-            cursor.execute("select * from result where problem = '" + str(x[0]) + "' and diff = '" + str(x[1]) + "'")
+            cursor.execute("select * from result where problem = ? and diff = ?", (str(x[0]), str(x[1])))
             x2 = cursor.fetchone()
             if x2 == None:
                 cursor.execute("insert into result values (?, ?, ? )", (x[0], x[1], "NULL"))
@@ -127,16 +127,12 @@ def update_user(username, chat_id, last_update):
                     s2 = s2[5].split('\"')
                     count += 1
                     j += 1
-                    cursor.execute("select * from result where problem = '" + s[3] + "'and diff = '" + s[4] + "'")
+                    cursor.execute("select * from result where problem = ? and diff = ?", (s[3], s[4]))
                     x = cursor.fetchone()
                     if s2[1] == 'OK' and x != None:
-                        cursor.execute(
-                            "update result set verdict = '" + s2[1] + "' where problem = '" + s[3] + "' and diff = '" +
-                            s[4] + "'")
+                        cursor.execute("update result set verdict = ? where problem = ? and diff = ?", (s2[1], s[3], s[4]))
                     if x[2] != 'OK':
-                        cursor.execute(
-                            "update result set verdict = '" + s2[1] + "' where problem = '" + s[3] + "' and diff = '" +
-                            s[4] + "'")
+                        cursor.execute("update result set verdict = ? where problem = ? and diff = ?", (s2[1], s[3], s[4]))
         if v:
             break
 
@@ -145,9 +141,9 @@ def update_user(username, chat_id, last_update):
 
     settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\settings.db")
     conn = settings.cursor()
-    conn.execute("update users set username = '" + str(username) + "' where chat_id = '" + str(chat_id) + "'")
-    conn.execute("update users set last_update = '" + str(last_try_new) + "' where chat_id = '" + str(chat_id) + "'")
-    conn.execute("update users set last_problem = '" + str(last_problem) + "' where chat_id = '" + str(chat_id) + "'")
+    conn.execute("update users set username = ? where chat_id = ?", (str(username), str(chat_id)))
+    conn.execute("update users set last_update = ? where chat_id = ?", (str(last_try_new), str(chat_id)))
+    conn.execute("update users set last_problem = ? where chat_id = ?", (str(last_problem), str(chat_id)))
 
     settings.commit()
     settings.close()
@@ -156,6 +152,6 @@ def update_user(username, chat_id, last_update):
 def update_theory_base(tag, link):
     theory = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\theory.db")
     conn = theory.cursor()
-    conn.execute("insert into " + str(tag) + " values (?)", (str(link), ))
+    conn.execute("insert into ? values (?)", (tag, str(link)))
     theory.commit()
     theory.close()

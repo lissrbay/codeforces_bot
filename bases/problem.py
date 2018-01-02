@@ -12,75 +12,75 @@ import matplotlib.pyplot as plt
 
 available_tags = ['math', "strings", "trees", "graphs", "dp", "greedy", "geometry", "combinatorics"]
 available_diff = ['A', 'B', 'C', 'D', 'E', 'F']
+colors = ['red', 'green', 'tan', 'blue', 'purple', 'orange']
 
-def get_unsolved_problem(tag, username):
-    tasks = list()
-    list_of_current_tags = list()
-    list_of_current_diff = list()
-
-    def find_intersection(tag):
-        conn = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\users\\" + username + '.db')
-        conn2 = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + '\\cf.db')
-        cursor = conn.cursor()
-        cursor2 = conn2.cursor()
-        cursor2.execute("SELECT * FROM " + tag)
-        a = list()
-        problem_and_diff = cursor2.fetchone()
-
-        while problem_and_diff != None:
-            cursor.execute("SELECT * FROM result WHERE problem = '" + str(problem_and_diff[0]) + "' AND diff = '" + str(problem_and_diff[1]) + "' AND NOT verdict = 'OK'")
-            problem_and_diff_and_ok = cursor.fetchone()
-            if problem_and_diff_and_ok != None and problem_and_diff_and_ok in tasks:
-                a.append(problem_and_diff_and_ok)
-            problem_and_diff = cursor2.fetchone()
-
-        conn.close()
-        conn2.close()
-        return a
-
-
+def checking_request_tags(tag):
     list_of_current_tags = list()
     for i in available_tags:
         if i in tag:
             list_of_current_tags.append(i)
 
+    if len(list_of_current_tags) == 0:
+        return available_tags.copy()
+
+    return list_of_current_tags
+
+
+def find_intersection(tasks, tag, username):
+    conn = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\users\\" + username + '.db')
+    conn2 = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + '\\cf.db')
+    cursor = conn.cursor()
+    cursor2 = conn2.cursor()
+    cursor2.execute("SELECT * FROM " + tag)
+    a = list()
+    problem_and_diff = cursor2.fetchone()
+    while problem_and_diff != None:
+        cursor.execute("SELECT * FROM result WHERE problem = ? AND diff = ?  AND NOT verdict = 'OK'", (problem_and_diff[0], problem_and_diff[1]))
+        problem_and_diff_and_ok = cursor.fetchone()
+        if problem_and_diff_and_ok != None and problem_and_diff_and_ok in tasks:
+            a.append(problem_and_diff_and_ok)
+        problem_and_diff = cursor2.fetchone()
+    conn.close()
+    conn2.close()
+    return a
+
+
+def get_array_of_tasks(tags_array, tasks, username):
+    for i in range(1, len(tags_array)):
+        tasks = find_intersection(tasks, tags_array[i], username)
+    return tasks
+
+
+def checking_request_diff(tag):
     list_of_current_diff = list()
     for i in available_diff:
         if i in tag:
             list_of_current_diff.append(i)
-    f = False
-    if len(list_of_current_tags) == 0 and list_of_current_diff !=0:
-        list_of_current_tags = available_tags.copy()
-        f = True
-    if len(list_of_current_tags) == 0 and len(list_of_current_diff) == 0:
-        return "Plz try again"
-    if len(list_of_current_diff) == 0 and len(list_of_current_tags) != 0:
-        list_of_current_diff = available_diff.copy()
-        f = True
+    if len(list_of_current_diff) == 0:
+        return available_diff.copy()
+    return list_of_current_diff
 
 
+def get_unsolved_problem(tag, username):
+    tasks = list()
+    list_of_current_tags = checking_request_tags(tag)
+    list_of_current_diff = checking_request_diff(tag)
     conn = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\users\\" + username + '.db')
     conn2 = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + '\\cf.db')
     cursor = conn.cursor()
     cursor2 = conn2.cursor()
     cursor2.execute("SELECT * FROM " + list_of_current_tags[0])
     problem_and_diff = cursor2.fetchone()
-
     while problem_and_diff != None:
         if problem_and_diff[1] in list_of_current_diff:
-            cursor.execute("SELECT * FROM result WHERE problem = '" + str(problem_and_diff[0]) + "' AND diff = '" + str(
-                problem_and_diff[1]) + "' AND NOT verdict = 'OK'")
+            cursor.execute("SELECT * FROM result WHERE problem = ? AND diff = ? AND NOT verdict = 'OK'", (problem_and_diff[0], problem_and_diff[1]))
             problem_and_diff_and_ok = cursor.fetchone()
             if problem_and_diff_and_ok != None:
                 tasks.append(problem_and_diff_and_ok)
         problem_and_diff = cursor2.fetchone()
-
     conn.close()
     conn2.close()
-    if not f:
-        for i in range(1, len(list_of_current_tags)):
-            tasks = find_intersection(list_of_current_tags[i])
-
+    tasks = get_array_of_tasks(list_of_current_tags, tasks, username)
     random.seed()
     if len(tasks) > 0:
         ind1 = random.randint(0, len(tasks) - 1)
@@ -110,40 +110,42 @@ class Pair():
         self.first = first
         self.second = second
 
-def create_stats_picture(username):
+def count_stats(username):
     conn = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\users\\" + username + '.db')
     conn2 = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + '\\cf.db')
     cursor = conn.cursor()
     cursor2 = conn2.cursor()
-    a = list()
-    b = list()
-    leg = list()
-    sum = 0
+    list_tags_stats = list()
+
     for i in available_tags:
         cursor2.execute("SELECT * FROM " + str(i))
         x = cursor2.fetchone()
         count = 0
         while x != None:
-            cursor.execute("SELECT * FROM result WHERE problem = '" + str(x[0]) + "' AND diff = '" + str(
-                x[1]) + "' AND verdict = 'OK'")
+            cursor.execute("SELECT * FROM result WHERE problem = ? AND diff = ? AND verdict = 'OK'", (x[0], x[1]))
             y = cursor.fetchone()
             if y != None:
                 count += 1
             x = cursor2.fetchone()
-        a.append(Pair(count, i))
-        sum += count
-
+        list_tags_stats.append(Pair(count, i))
     conn.close()
     conn2.close()
-    if sum == 0:
-        return True
-    for i in range(len(a)):
-        if a[i].first / sum != 0:
-            b.append(a[i].first / sum)
-            leg.append(a[i].second)
+    return list_tags_stats
+
+def create_stats_picture(username):
+    data_for_plot = list()
+    leg = list()
+    list_tags_stats = count_stats(username)
+    sum = 0
+    for i in range(len(list_tags_stats)):
+        sum += list_tags_stats[i].first
+    for i in range(len(list_tags_stats)):
+        if list_tags_stats[i].first / sum != 0:
+            data_for_plot.append(list_tags_stats[i].first / sum)
+            leg.append(list_tags_stats[i].second)
 
     fig1, ax1 = plt.subplots()
-    ax1.pie(b,  autopct='%1.1f%%',
+    ax1.pie(data_for_plot,  autopct='%1.1f%%',
             shadow=True, startangle=90)
     ax1.axis('equal')
     ax1.legend(leg)
@@ -155,21 +157,19 @@ def create_stats_picture(username):
     return False
 
 
-def create_text_stats(username):
-    verdict = {"COMPILATION_ERROR" : 0, "OK" : 0, "TIME_LIMIT_EXCEEDED" : 0, "WRONG_ANSWER" : 0, "RUNTIME_ERROR" : 0, "MEMORY_LIMIT_EXCEEDED" : 0}
-    colors = ['red', 'green', 'tan', 'blue', 'purple', 'orange']
+def count_stats_for_second_plot(username):
+    verdict = {"COMPILATION_ERROR": 0, "OK": 0, "TIME_LIMIT_EXCEEDED": 0, "WRONG_ANSWER": 0, "RUNTIME_ERROR": 0,
+               "MEMORY_LIMIT_EXCEEDED": 0}
     conn = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\users\\" + username + '.db')
     conn2 = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + '\\cf.db')
     cursor = conn.cursor()
     cursor2 = conn2.cursor()
     count = 0
-    a = list()
-    b = list()
     for i in available_tags:
         cursor2.execute("SELECT * FROM " + str(i))
         x = cursor2.fetchone()
         while x != None:
-            cursor.execute("SELECT * FROM result WHERE problem = '" + str(x[0]) + "' AND diff = '" + str(x[1]) + "'")
+            cursor.execute("SELECT * FROM result WHERE problem = ? AND diff = ?", (x[0], x[1]))
             y = cursor.fetchone()
             if y != None:
                 for j in verdict.keys():
@@ -178,25 +178,31 @@ def create_text_stats(username):
                         count += 1
 
             x = cursor2.fetchone()
+    return verdict
+    conn.close()
+    conn2.close()
 
+
+def create_text_stats(username):
+    list_tags_stats = list()
+    data_for_plot = list()
+    verdict = count_stats_for_second_plot(username)
     for i in verdict.keys():
-        a.append(i)
-        b.append(verdict[i])
+        list_tags_stats.append(i)
+        data_for_plot.append(verdict[i])
     fig1, ax1 = plt.subplots()
-    ax1.pie(b, labels = b, colors = colors,
+    ax1.pie(data_for_plot, labels = data_for_plot, colors = colors,
             shadow=True, startangle=90)
     ax1.axis('equal')
-    ax1.legend(a)
+    ax1.legend(list_tags_stats)
     ax1.set_title('How many different verdict in last status of problem you have: ')
     path = os.path.join(os.path.abspath(os.path.dirname(__file__)) + "\\users\\", username + '.png')
     if os.path.exists(path):
         os.remove(path)
     plt.savefig(os.path.abspath(os.path.dirname(__file__)) + "\\users\\" + username + ".png")
-    conn.close()
-    conn2.close()
     plt.close()
-    s = username + " has at least one submissions in " + str(count) + " problems"
-    return s
+    return True
+
 
 
 
