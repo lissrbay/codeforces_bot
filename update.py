@@ -1,10 +1,14 @@
 import requests
 import sqlite3
-import os
 from bs4 import BeautifulSoup
+class element():
+    def __init__(self, problem, difficult, verdict):
+        self.problem = problem
+        self.difficult = difficult
+        self.verdict = verdict
 
 def cf_update():
-    settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\settings.db")
+    settings = sqlite3.connect("settings.db")
     cursor = settings.cursor()
     cursor.execute("select * from last_update_problemset")
     x = cursor.fetchone()
@@ -14,7 +18,7 @@ def cf_update():
     url = 'http://codeforces.com/problemset/'
     r = requests.get(url)
     max_page = 0
-    available_tags = {'math', "strings", "trees", "graphs", "dp", "greedy"}
+    state = {'math', "strings", "trees", "graphs", "dp", "greedy"}
     soup = BeautifulSoup(r.text, "lxml")
     base = sqlite3.connect("cf.db")
     conn = base.cursor()
@@ -48,7 +52,7 @@ def cf_update():
                         f = True
                         last_update = old
                     conn.execute("insert into problems values (?, ?)", (a, b))
-                if len(s) == 4 and s[3] in available_tags:
+                if len(s) == 4 and s[3] in state:
                     conn.execute("insert into " + s[3] + " values (?, ?)", (a, b))
 
         if v:
@@ -57,15 +61,16 @@ def cf_update():
 
     base.commit()
     base.close()
-    settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\settings.db")
+    settings = sqlite3.connect("settings.db")
     conn = settings.cursor()
+    print(last_update)
     conn.execute("update last_update_problemset set problem = '" + str(last_update) + "' where problem = '" + str(last_try) + "'")
     settings.commit()
     settings.close()
 
 def update_user(username, chat_id, last_update):
-    conn = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\users\\" + username + '.db')
-    conn2 = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + '\\cf.db')
+    conn = sqlite3.connect(username + '.db')
+    conn2 = sqlite3.connect('cf.db')
     cursor = conn.cursor()
     cursor2 = conn2.cursor()
     cursor2.execute("SELECT * FROM problems")
@@ -128,7 +133,7 @@ def update_user(username, chat_id, last_update):
     conn.commit()
     conn.close()
 
-    settings = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\settings.db")
+    settings = sqlite3.connect("settings.db")
     conn = settings.cursor()
     conn.execute("update users set username = '" + str(username) + "' where chat_id = '" + str(chat_id) + "'")
     conn.execute("update users set last_update = '" + str(last_try_new) + "' where chat_id = '" + str(chat_id) + "'")
@@ -136,7 +141,7 @@ def update_user(username, chat_id, last_update):
     settings.close()
 
 def update_theory_base(tag, link):
-    theory = sqlite3.connect(os.path.abspath(os.path.dirname(__file__)) + "\\theory.db")
+    theory = sqlite3.connect("theory.db")
     conn = theory.cursor()
     conn.execute("insert into " + str(tag) + " values (?)", (str(link), ))
     theory.commit()
