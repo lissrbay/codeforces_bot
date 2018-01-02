@@ -160,11 +160,6 @@ def stats(message):
         bot.send_message(message.chat.id, "You should login before getting statistic.")
 
 
-@bot.message_handler(commands = ['bite'])
-def bite(message):
-    bot.send_message(message.chat.id, "Кусь тебя за ушко, мурмурмур!:3")
-
-
 @bot.message_handler(content_types=['text'])
 def reply(message):
     bot.send_message(message.chat.id, "Hmm...")
